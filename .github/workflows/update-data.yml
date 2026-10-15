@@ -1,0 +1,92 @@
+name: HS300 PCR - daily data refresh
+
+on:
+  schedule:
+    # 09:37 UTC = 17:37 Beijing time, Monday-Friday.
+    # Chosen away from the top of the hour to reduce scheduling delays.
+    - cron: "37 9 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      full_backfill:
+        description: "首次部署/需要补齐缺失历史时勾选"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hs300-pcr-daily-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Update market data and calculate PCR/signals
+        env:
+          PCR_START_DATE: "20240501"
+          PCR_FULL_BACKFILL: ${{ inputs.full_backfill }}
+        run: |
+          python - <<'PY'
+          import os
+          import pcr_app_core as core
+
+          start_date = os.getenv("PCR_START_DATE", "20240501")
+          full_backfill = os.getenv("PCR_FULL_BACKFILL", "false").lower() == "true"
+
+          print(f"start_date={start_date}; full_backfill={full_backfill}")
+          result = core.update_pipeline(
+              start_date=start_date,
+              full_backfill=full_backfill,
+              etf_weight=core.ETF_WEIGHT,
+              bb_length=core.BB_LENGTH,
+              bb_mult=core.BB_MULT,
+          )
+
+          status = core.data_status()
+          print("=== Data status ===")
+          for key in (
+              "index_rows", "index_last",
+              "etf_rows", "etf_last",
+              "io_rows", "io_last",
+              "common_rows", "common_last",
+          ):
+              print(f"{key}: {status.get(key)}")
+
+          if result.get("io_error"):
+              print(f"WARNING: IO update did not succeed: {result['io_error']}")
+          print("Data update pipeline finished.")
+          PY
+
+      - name: Commit refreshed CSV cache
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A data
+          if git diff --cached --quiet; then
+            echo "No data changes to commit."
+          else
+            git commit -m "chore(data): refresh PCR market data"
+            git push
+          fi

@@ -1,0 +1,13 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.DS_Store
+logs/
+# Keep data/*.csv tracked: GitHub Actions commits refreshed market data.
+data/uploaded_*.csv
+# Output files can be regenerated from data and are not needed in Git.
+output/*.csv
+output/*.png
+.streamlit/secrets.toml
+.env

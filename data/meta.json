@@ -1,0 +1,14 @@
+{
+  "index_last_date": "2026-10-14",
+  "index_rows": 593,
+  "updated_at": "2026-10-15T16:51:12+08:00",
+  "etf_last_date": "2026-10-14",
+  "etf_rows": 593,
+  "last_pipeline_at": "2026-10-15T10:54:00+08:00",
+  "io_rows": 593,
+  "common_rows": 593,
+  "io_update_error": "",
+  "io_last_date": "2026-10-14",
+  "io_observed_at": "2026-10-14T15:20:26+08:00",
+  "auto_daily_update_date": "2026-10-14"
+}
