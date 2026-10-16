@@ -4,7 +4,7 @@ on:
   schedule:
     # 09:37 UTC = 17:37 Beijing time, Monday-Friday.
     # Chosen away from the top of the hour to reduce scheduling delays.
-    - cron: "10 20 * * 1-5"
+    - cron: "15 20 * * 1-5"
       timezone: "Asia/Shanghai"
   workflow_dispatch:
     inputs:
